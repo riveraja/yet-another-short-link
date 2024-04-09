@@ -69,6 +69,12 @@ const server = Bun.serve({
                     return Response.json({ success: false, err: message, status: 403 })
                 }
                 const signedToken: string = await signJwt({ userId: data.user_id, email: data.email})
+
+                try {
+                    await db.insert(users).values(hUserData)
+                } catch (error) {
+                    throw new Error('Failed to insert data.')                    
+                }
                 return Response.json({ success: true, hUserData, token: signedToken })
             }
             return Response.json({ success: false })
