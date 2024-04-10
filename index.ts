@@ -55,7 +55,7 @@ const server = Bun.serve({
             return Response.json({ success: true });
         }
 
-        if (req.method === 'POST' && url.pathname === '/api/login-user') {
+        if (req.method === 'POST' && url.pathname === '/api/refresh-token') {
             const authEmail: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
             const payload: LoginData = (await req.json()) as LoginData
             const data = zLoginData.parse(payload)
