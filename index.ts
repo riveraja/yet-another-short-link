@@ -4,6 +4,7 @@ import { users } from './schema.ts'
 import { createPasswordHash, verifyPasswordHash } from "./utils/hashing.ts";
 import { signJwt, verifyJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
+import { like, and } from 'drizzle-orm'
 
 const saltrounds: number = 10;
 
@@ -22,8 +23,18 @@ interface UserData {
 }
 
 const zUserData = z.object({
-    user_id: z.string().min(4),
+    user_id: z.string().trim().min(4),
     email: z.string().trim().email(),
+    password: z.string().trim()
+})
+
+interface LoginData {
+    user_id: string,
+    password: string
+}
+
+const zLoginData = z.object({
+    user_id: z.string().trim().min(4),
     password: z.string().trim()
 })
 
@@ -44,10 +55,24 @@ const server = Bun.serve({
             return Response.json({ success: true });
         }
 
+        if (req.method === 'POST' && url.pathname === '/api/login-user') {
+            const authEmail: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
+            const payload: LoginData = (await req.json()) as LoginData
+            const data = zLoginData.parse(payload)
+            const result = await db.select().from(users).where(and(like(users.user_id, data.user_id), like(users.email, authEmail))).limit(1)
+            const { password } = result[0]
+            const isMatch: boolean = await verifyPasswordHash(data.password, password)
+            // console.log(isMatch)
+            if (isMatch) {
+                const signedToken: string = await signJwt({ userId: data.user_id, email: authEmail})
+                return Response.json({ success: true, status: 200, token: signedToken})
+            }
+            return Response.json({ success: false })
+        }
+
         if (req.method === 'POST' && url.pathname === '/api/create-link') {
             const clientJwt: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
             await verifyJwt(clientJwt)
-            // console.log(clientJwt)
             const payload: JsonData = (await req.json()) as JsonData
             const data = zJsonData.parse(payload)
             const hashString: String = await getHash(data.long_url)

@@ -8,22 +8,22 @@ const aud: string = import.meta.env.JWT_AUDIENCE as string
 const exp: string = import.meta.env.JWT_EXPIRATION_TIME as string
 
 export const signJwt = async (data: { userId: string, email: string }) => {
-    const jwt: string = await new jose.SignJWT(data)
+    return await new jose.SignJWT(data)
         .setProtectedHeader({ alg: alg })
         .setIssuedAt()
         .setIssuer(iss)
         .setAudience(aud)
         .setExpirationTime(exp)
         .sign(key)
-
-    return jwt
 }
 
 export const verifyJwt = async (clientJwt: string) => {
-    const { payload } = await jose.jwtVerify(clientJwt, key, {
-        issuer: iss,
-        audience: aud
-    })
-
-    console.log(payload)
+    try {
+        await jose.jwtVerify(clientJwt, key, {
+            issuer: iss,
+            audience: aud
+        })    
+    } catch (error) {
+        throw new Error('Token verification failed.')
+    }
 }
