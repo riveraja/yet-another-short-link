@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { db } from './db/db.ts'
 import { users } from './schema.ts'
 import { createPasswordHash, verifyPasswordHash } from "./utils/hashing.ts";
-import { signJwt } from "./utils/jwt.ts";
+import { signJwt, verifyJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
 
 const saltrounds: number = 10;
@@ -38,12 +38,16 @@ const server = Bun.serve({
     hostname: import.meta.env.HOSTNAME,
     async fetch(req) {
         const url = new URL(req.url);
+        // console.log(req.headers) // debug only
 
         if (url.pathname === '/') {
             return Response.json({ success: true });
         }
 
         if (req.method === 'POST' && url.pathname === '/api/create-link') {
+            const clientJwt: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
+            await verifyJwt(clientJwt)
+            // console.log(clientJwt)
             const payload: JsonData = (await req.json()) as JsonData
             const data = zJsonData.parse(payload)
             const hashString: String = await getHash(data.long_url)
