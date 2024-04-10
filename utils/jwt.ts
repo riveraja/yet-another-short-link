@@ -1,4 +1,5 @@
 import * as jose from 'jose'
+import { db } from '../db/db.ts'
 
 const key: Uint8Array = new TextEncoder().encode(import.meta.env.JWT_SECRET)
 const alg: string = import.meta.env.JWT_ALG as string
@@ -16,4 +17,13 @@ export const signJwt = async (data: { userId: string, email: string }) => {
         .sign(key)
 
     return jwt
+}
+
+export const verifyJwt = async (clientJwt: string) => {
+    const { payload } = await jose.jwtVerify(clientJwt, key, {
+        issuer: iss,
+        audience: aud
+    })
+
+    console.log(payload)
 }
