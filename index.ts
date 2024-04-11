@@ -2,9 +2,9 @@ import bcrypt from "bcrypt";
 import { db } from './db/db.ts'
 import { users } from './schema.ts'
 import { createPasswordHash, verifyPasswordHash } from "./utils/hashing.ts";
-import { signJwt, verifyJwt } from "./utils/jwt.ts";
+import { signJwt, verifyJwt, decodeJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
-import { like, and } from 'drizzle-orm'
+import { like, and, count } from 'drizzle-orm'
 
 const saltrounds: number = 10;
 
@@ -28,15 +28,15 @@ const zUserData = z.object({
     password: z.string().trim()
 })
 
-interface LoginData {
-    user_id: string,
-    password: string
-}
+// interface LoginData {
+//     user_id: string,
+//     password: string
+// }
 
-const zLoginData = z.object({
-    user_id: z.string().trim().min(4),
-    password: z.string().trim()
-})
+// const zLoginData = z.object({
+//     user_id: z.string().trim().min(4),
+//     password: z.string().trim()
+// })
 
 async function getHash(url:string) {
     const salt: string = await bcrypt.genSalt(saltrounds);
@@ -55,36 +55,44 @@ const server = Bun.serve({
             return Response.json({ success: true });
         }
 
+        if (req.method === 'GET' && url.pathname === '/api/decode-token') {
+            const token: string = (req.headers.get('x-api-key'))?.trim() as string
+            const { userId, email } = await decodeJwt(token)
+            return Response.json({ success: true, status: 200, user: userId, email: email })
+        }
+
         /**
-         * Authorization: Beear <user_email>
-         * {
-         *  user_id: <user_id>
-         *  password: <password>
-         * }
+         * x-api-key: <user's expired token>
          */
-        if (req.method === 'POST' && url.pathname === '/api/refresh-token') {
-            const authEmail: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
-            const payload: LoginData = (await req.json()) as LoginData
-            const data = zLoginData.parse(payload)
-            const result = await db.select().from(users).where(and(like(users.user_id, data.user_id), like(users.email, authEmail))).limit(1)
-            const { password } = result[0]
-            const isMatch: boolean = await verifyPasswordHash(data.password, password)
-            // console.log(isMatch)
-            if (isMatch) {
-                const signedToken: string = await signJwt({ userId: data.user_id, email: authEmail})
-                return Response.json({ success: true, status: 200, token: signedToken})
+        if (req.method === 'GET' && url.pathname === '/api/refresh-token') {
+            const token: string = (req.headers.get('x-api-key'))?.trim() as string
+            const { userId, email } = await decodeJwt(token)
+            try {
+                const counter = await db.select({
+                    value: count()
+                })
+                    .from(users)
+                    .where(and(like(users.user_id, userId as string), like(users.email, email as string)))
+                    .limit(1)
+                if (counter[0].value === 1) {
+                    const signedToken: string = await signJwt({ userId: userId as string, email: email as string })
+                    return Response.json({ success: true, status: 200, token: signedToken})
+                }
+            } catch (error) {
+                throw new Error("Failed to query the database.")
             }
+            
             return Response.json({ success: false })
         }
 
         /**
-         * Authorization: Bearer <user_jwt_token>
+         * x-api-key: <user_jwt_token>
          * {
          *  long_url: <url>
          * }
          */
         if (req.method === 'POST' && url.pathname === '/api/create-link') {
-            const clientJwt: string = req.headers.get('authorization')?.split(" ")[1].trim() as string
+            const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
             await verifyJwt(clientJwt)
             const payload: JsonData = (await req.json()) as JsonData
             const data = zJsonData.parse(payload)
@@ -94,7 +102,7 @@ const server = Bun.serve({
         }
 
         /**
-         * x-api-key: <user_jwt_token>
+         * x-api-key: <create_token>
          * {
          *  user_id: <user_id>
          *  email: <user_email>
@@ -102,7 +110,7 @@ const server = Bun.serve({
          * }
          */
         if (req.method === 'POST' && url.pathname === '/api/create-user') {
-            const token: string = (req.headers.get('x-api-key')) as string
+            const token: string = (req.headers.get('x-api-key'))?.trim() as string
             if (token === import.meta.env.CREATE_TOKEN) {
                 const userData: UserData = (await req.json()) as UserData
                 const data = zUserData.parse(userData)

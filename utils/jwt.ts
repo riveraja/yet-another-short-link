@@ -19,11 +19,19 @@ export const signJwt = async (data: { userId: string, email: string }) => {
 
 export const verifyJwt = async (clientJwt: string) => {
     try {
-        await jose.jwtVerify(clientJwt, key, {
+        return await jose.jwtVerify(clientJwt, key, {
             issuer: iss,
             audience: aud
         })    
     } catch (error) {
         throw new Error('Token verification failed.')
+    }
+}
+
+export const decodeJwt = async (clientJwt: string) => {
+    try {
+        return await jose.decodeJwt(clientJwt)
+    } catch (error) {
+        throw new Error("Failed decoding the token.")
     }
 }
