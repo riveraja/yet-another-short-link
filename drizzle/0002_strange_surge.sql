@@ -1,0 +1,2 @@
+ALTER TABLE "urls" DROP COLUMN IF EXISTS "created_at";
+ALTER TABLE "urls" DROP COLUMN IF EXISTS "expires_on";
