@@ -13,3 +13,6 @@ const migrationClient = postgres(connectionString, { max: 1 })
 console.log('Database migration starting...')
 migrate(drizzle(migrationClient), { migrationsFolder: './drizzle' })
 console.log('Database migration completed.')
+
+process.exit()
+// await migrationClient.end()
