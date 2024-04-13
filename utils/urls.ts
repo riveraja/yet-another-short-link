@@ -40,3 +40,16 @@ export const insertNewUrl = async (data: UrlsData) => {
         throw new Error('Failed to insert data.')        
     }
 }
+
+export const findMatch = async (data: { path: string }) => {
+    try {
+        console.log('finding match for ', data.path)
+        return await db.select({
+            long_url: urls.long_url,
+            expires_on: urls.expires_on
+        }).from(urls).where(like(urls.short_url, data.path))
+    } catch (error) {
+        console.log(error)
+        throw new Error('Failed to query the database.')
+    }
+}
