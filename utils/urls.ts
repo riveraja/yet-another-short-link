@@ -18,6 +18,7 @@ export const getDuplicates = async (data: {longUrl: string}) => {
             expires_on: urls.expires_on
         }).from(urls).where(like(urls.long_url, data.longUrl)).limit(1)
     } catch (error) {
+        console.log(error)
         throw new Error('Failed to query the database.')
     }
 }
@@ -35,6 +36,7 @@ export const insertNewUrl = async (data: UrlsData) => {
             expires_on: data.expires_on
         })
     } catch (error) {
+        console.log(error)
         throw new Error('Failed to insert data.')        
     }
 }
