@@ -5,7 +5,7 @@ import { signJwt, verifyJwt, decodeJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
 import { like, and, count } from 'drizzle-orm'
 import { fetchUuid } from './utils/users.ts';
-import { getDuplicates, insertNewUrl } from './utils/urls.ts';
+import { getDuplicates, insertNewUrl, findMatch } from './utils/urls.ts';
 
 interface JsonData {
     long_url: string,
@@ -176,6 +176,16 @@ const server = Bun.serve({
                 return Response.json({ success: true, user_id: hUserData.user_id, email: hUserData.email, token: signedToken })
             }
             return Response.json({ success: false })
+        }
+
+        const urlHash: string = url.pathname.slice(1)
+        const result = await findMatch({ path: urlHash})
+        console.log(result)
+
+        if (Object(result).length === 1) {
+            // TODO check link expiree
+            const longUrl: string = result[0].long_url as string
+            return Response.redirect(longUrl, 302)
         }
 
         return new Response("Page not found.", { status: 404 })
