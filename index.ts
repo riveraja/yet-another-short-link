@@ -78,7 +78,7 @@ const server = Bun.serve({
          *  expire_time_hours: <number>
          * }
          */
-        if (req.method === 'POST' && url.pathname === '/api/create-link') {
+        if (req.method === 'POST' && url.pathname === '/api/shorten-url') {
             const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
             const { userId, email } = await decodeJwt(clientJwt)
             await verifyJwt(clientJwt)
