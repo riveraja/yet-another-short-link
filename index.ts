@@ -64,6 +64,7 @@ const server = Bun.serve({
                     return Response.json({ success: true, status: 200, token: signedToken})
                 }
             } catch (error) {
+                console.log(error)
                 throw new Error("Failed to query the database.")
             }
             
@@ -84,7 +85,7 @@ const server = Bun.serve({
             
             const payload: JsonData = (await req.json()) as JsonData
             const data = zJsonData.parse(payload)
-            const hashString: String = await getHash(data.long_url)
+            const hashString: string = await getHash(data.long_url)
 
             const longUrl: string = data.long_url as string
             const shortUrl: string = `http://${url.hostname}:${url.port}/${hashString}`
@@ -97,30 +98,42 @@ const server = Bun.serve({
 
             // await db.insert(urls).values(hUrlsData)
             if (Object(result).length === 0) {
-                await insertNewUrl({
-                    long_url: longUrl,
-                    short_url: shortUrl,
-                    created_by: userUuid,
-                    created_at: new Date(dateCreated).toString(),
-                    expires_on: new Date(dateExpires).toString()
-                })
-                console.log('Done inserting data...')
+                try {
+                    await insertNewUrl({
+                        long_url: longUrl,
+                        short_url: hashString,
+                        created_by: userUuid,
+                        created_at: new Date(dateCreated).toString(),
+                        expires_on: new Date(dateExpires).toString()
+                    })
+                    console.log('Done inserting data...')
+
+                    return Response.json({
+                        success: true,
+                        status: 200,
+                        long_url: longUrl,
+                        short_url: shortUrl,
+                        created_at: new Date(dateCreated).toString(),
+                        expires_on: new Date(dateExpires).toString()
+                    })
+                } catch (error) {
+                    console.log(error)
+                    throw new Error('Failed to insert the data.')
+                }
                 
-                return Response.json({
-                    success: true,
-                    status: 200,
-                    long_url: longUrl,
-                    short_url: shortUrl,
-                    created_at: new Date(dateCreated).toString(),
-                    expires_on: new Date(dateExpires).toString()
-                })
             }
 
             if (Object(result).length > 0) {
                 console.log('A duplicate is found...')
                 console.log(result[0])
 
-                return Response.json(result[0])
+                return Response.json({
+                    success: true,
+                    status: 200,
+                    long_url: result[0].long_url,
+                    shortUrl: `http://${url.hostname}:${url.port}/${result[0].short_url}`,
+                    expires_on: result[0].expires_on
+                })
             }
 
             return Response.json({ success: false })
@@ -157,6 +170,7 @@ const server = Bun.serve({
                 try {
                     await db.insert(users).values(hUserData)
                 } catch (error) {
+                    console.log(error)
                     throw new Error('Failed to insert data.')                    
                 }
                 return Response.json({ success: true, user_id: hUserData.user_id, email: hUserData.email, token: signedToken })
