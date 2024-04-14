@@ -13,8 +13,12 @@ export const verifyPasswordHash = async (password: string, hashedPassword: strin
     return await Bun.password.verify(password, hashedPassword)
 }
 
-export const getHash = async (url:string) => {
+export const getHash = async (url: string) => {
     const salt: string = await bcrypt.genSalt(saltrounds);
     const hashString: string = await bcrypt.hash(url, salt)
     return hashString.substring(7).substring(22).substring(1,6)
+}
+
+export const genRandString = async () => {
+    return (Math.random() + 1).toString(36).substring(7);
 }

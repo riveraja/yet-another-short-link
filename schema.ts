@@ -1,4 +1,4 @@
-import { timestamp, text, uuid, unique, pgTable, integer, numeric } from 'drizzle-orm/pg-core';
+import { timestamp, text, uuid, unique, pgTable, integer, boolean } from 'drizzle-orm/pg-core';
 import { sql } from "drizzle-orm";
 
 export const users = pgTable('users', {
@@ -7,6 +7,8 @@ export const users = pgTable('users', {
     email: text('email').notNull(),
     password: text('password').notNull(),
     created_at: timestamp('created_at').default(sql`now()`),
+    active_code: text('active_code'),
+    is_active: boolean('is_active').default(false),
 }, (t) => ({
     uniqueKey1: unique().on(t.user_id, t.email),
 }))
