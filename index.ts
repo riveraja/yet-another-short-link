@@ -1,10 +1,9 @@
 import { db } from './db/db.ts'
-import { users, urls } from './schema.ts'
+import { users } from './schema.ts'
 import { createPasswordHash, verifyPasswordHash, getHash, genRandString } from "./utils/hashing.ts";
 import { signJwt, verifyJwt, decodeJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
-import { like, and, count } from 'drizzle-orm'
-import { fetchUuid } from './utils/users.ts';
+import { fetchUuid, verifyOtp, getCount } from './utils/users.ts';
 import { getDuplicates, insertNewUrl, findMatch } from './utils/urls.ts';
 
 interface JsonData {
@@ -12,7 +11,7 @@ interface JsonData {
     expire_time_hours: number
 }
 
-const zJsonData = z.object({
+const zJsonData: z.ZodType<JsonData> = z.object({
     long_url: z.string().trim().url(),
     expire_time_hours: z.number()
 })
@@ -24,7 +23,7 @@ interface UserData {
     active_code: string
 }
 
-const zUserData = z.object({
+const zUserData: z.ZodType<UserData> = z.object({
     user_id: z.string().trim().min(4),
     email: z.string().trim().email(),
     password: z.string().trim(),
@@ -32,15 +31,19 @@ const zUserData = z.object({
 })
 
 const server = Bun.serve({
-    port: import.meta.env.PORT,
-    hostname: import.meta.env.HOSTNAME,
+    port: Bun.env.PORT,
+    hostname: Bun.env.HOSTNAME,
     async fetch(req) {
         const url = new URL(req.url);
         const verifyEndpoint = new RegExp('/api/verify', 'i')
         // console.log(req.headers) // debug only
 
         if (url.pathname === '/') {
-            return Response.json({ success: true });
+            return new Response(Bun.file("./index.html"), {
+                headers: {
+                    "Content-Type": "text/html",
+                }
+            })
         } else if (req.method === 'GET' && url.pathname === '/api/decode-token') {
             const token: string = (req.headers.get('x-api-key'))?.trim() as string
             const { userId, email } = await decodeJwt(token)
@@ -51,13 +54,9 @@ const server = Bun.serve({
              */
             const token: string = (req.headers.get('x-api-key'))?.trim() as string
             const { userId, email } = await decodeJwt(token)
+            await verifyJwt(token)
             try {
-                const counter = await db.select({
-                    value: count()
-                })
-                    .from(users)
-                    .where(and(like(users.user_id, userId as string), like(users.email, email as string)))
-                    .limit(1)
+                const counter = await getCount(userId as string, email as string)
                 if (counter[0].value === 1) {
                     const signedToken: string = await signJwt({ userId: userId as string, email: email as string })
                     return Response.json({ success: true, status: 200, token: signedToken})
@@ -77,6 +76,7 @@ const server = Bun.serve({
              * }
              */
             const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
+            // TODO: add rate limiter
             const { userId, email } = await decodeJwt(clientJwt)
             await verifyJwt(clientJwt)
             
@@ -93,7 +93,6 @@ const server = Bun.serve({
             console.log('checking duplicates')
             const result = await getDuplicates({ longUrl })
 
-            // await db.insert(urls).values(hUrlsData)
             if (Object(result).length === 0) {
                 try {
                     await insertNewUrl({
@@ -145,7 +144,7 @@ const server = Bun.serve({
              * }
              */
             const token: string = (req.headers.get('x-api-key'))?.trim() as string
-            if (token === import.meta.env.CREATE_TOKEN) {
+            if (token === Bun.env.ADMIN_TOKEN) {
                 const userData: UserData = (await req.json()) as UserData
                 const data = zUserData.parse(userData)
                 const hashedPassword: string = await createPasswordHash(data.password)
@@ -158,13 +157,14 @@ const server = Bun.serve({
                 }
                 const isMatch: boolean = await verifyPasswordHash(data.password, hashedPassword)
                 if (!isMatch) {
-                    const message: string = 'Failed to verify the password hash.'
+                    const message: string = 'Failed to verify the password.'
                     console.log(message)
                     return Response.json({ success: false, err: message, status: 403 })
                 }
                 const signedToken: string = await signJwt({ userId: data.user_id, email: data.email })
 
                 try {
+                    // TODO: move to utils/users.ts
                     await db.insert(users).values(hUserData)
                 } catch (error) {
                     console.log(error)
@@ -178,9 +178,20 @@ const server = Bun.serve({
             }
             return Response.json({ success: false })
         } else if (req.method === 'GET' && verifyEndpoint.exec(url.pathname)) {
+            /**
+             * Verify OTP
+             */
+            const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
+            const { userId, email } = await decodeJwt(clientJwt)
+            await verifyJwt(clientJwt)
+
             const activation_code = url.pathname.split('=')[1]
             console.log(activation_code)
-            return Response.json({ success: true })
+            if (await verifyOtp(userId as string, email as string, activation_code as string)) {
+                return Response.json({ success: true })
+            }
+            
+            return Response.json({ success: false })
         }
 
         //
