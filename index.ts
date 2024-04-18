@@ -19,14 +19,12 @@ const zJsonData: z.ZodType<JsonData> = z.object({
 interface UserData {
     user_id: string,
     email: string,
-    // password: string,
     active_code?: string | null
 }
 
 const zUserData: z.ZodType<UserData> = z.object({
     user_id: z.string().trim().min(4),
     email: z.string().trim().email(),
-    // password: z.string().trim(),
     active_code: z.string().trim().nullable()
 })
 
@@ -36,6 +34,7 @@ const server = Bun.serve({
     async fetch(req) {
         const url = new URL(req.url);
         const verifyEndpoint = new RegExp('/api/verify', 'i')
+        
         // console.log(req.headers) // debug only
 
         if (url.pathname === '/') {
@@ -75,6 +74,8 @@ const server = Bun.serve({
              *  expire_time_hours: <number>
              * }
              */
+            const expireHoursMax = 8
+            const expireHoursMin = 1
             const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
             // TODO: add rate limiter
             const { userId, email } = await decodeJwt(clientJwt)
@@ -84,11 +85,20 @@ const server = Bun.serve({
             const data = zJsonData.parse(payload)
             const hashString: string = await getHash(data.long_url)
 
+            let expire_hours: number = 0
+            if (data.expire_time_hours < 1) {
+                expire_hours = expireHoursMin
+            } else if (data.expire_time_hours > 8) {
+                expire_hours = expireHoursMax
+            } else {
+                expire_hours = Math.floor(data.expire_time_hours)
+            }
+
             const longUrl: string = data.long_url as string
             const shortUrl: string = `http://${url.hostname}:${url.port}/${hashString}`
             const userUuid: string = await fetchUuid(userId as string, email as string)
             const dateCreated: number = Date.now()
-            const dateExpires: number = dateCreated + data.expire_time_hours*60*60*1000
+            const dateExpires: number = dateCreated + expire_hours*60*60*1000
 
             console.log('checking duplicates')
             const result = await getDuplicates({ longUrl })
@@ -171,6 +181,7 @@ const server = Bun.serve({
         } else if (req.method === 'GET' && verifyEndpoint.exec(url.pathname)) {
             /**
              * Verify OTP
+             * url: /api/verify=<activation-code>
              */
             const clientJwt: string = (req.headers.get('x-api-key'))?.trim() as string
             const { userId, email } = await decodeJwt(clientJwt)
