@@ -1,6 +1,6 @@
 import { db } from './db/db.ts'
 import { users } from './schema.ts'
-import { createPasswordHash, verifyPasswordHash, getHash, genRandString } from "./utils/hashing.ts";
+import { getHash, genRandString } from "./utils/hashing.ts";
 import { signJwt, verifyJwt, decodeJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
 import { fetchUuid, verifyOtp, getCount } from './utils/users.ts';
@@ -19,15 +19,15 @@ const zJsonData: z.ZodType<JsonData> = z.object({
 interface UserData {
     user_id: string,
     email: string,
-    password: string,
-    active_code: string
+    // password: string,
+    active_code?: string | null
 }
 
 const zUserData: z.ZodType<UserData> = z.object({
     user_id: z.string().trim().min(4),
     email: z.string().trim().email(),
-    password: z.string().trim(),
-    active_code: z.string().trim()
+    // password: z.string().trim(),
+    active_code: z.string().trim().nullable()
 })
 
 const server = Bun.serve({
@@ -140,26 +140,17 @@ const server = Bun.serve({
              * {
              *  user_id: <user_id>
              *  email: <user_email>
-             *  password: <user_password>
              * }
              */
             const token: string = (req.headers.get('x-api-key'))?.trim() as string
             if (token === Bun.env.ADMIN_TOKEN) {
                 const userData: UserData = (await req.json()) as UserData
                 const data = zUserData.parse(userData)
-                const hashedPassword: string = await createPasswordHash(data.password)
                 const activation_code: string = await genRandString()
                 const hUserData: UserData = {
                     user_id: data.user_id,
                     email: data.email,
-                    password: hashedPassword,
                     active_code: activation_code
-                }
-                const isMatch: boolean = await verifyPasswordHash(data.password, hashedPassword)
-                if (!isMatch) {
-                    const message: string = 'Failed to verify the password.'
-                    console.log(message)
-                    return Response.json({ success: false, err: message, status: 403 })
                 }
                 const signedToken: string = await signJwt({ userId: data.user_id, email: data.email })
 

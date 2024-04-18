@@ -2,16 +2,16 @@ import bcrypt from "bcrypt";
 
 const saltrounds: number = 10;
 
-export const createPasswordHash = async (password: string) => {
-    return await Bun.password.hash(password, {
-        algorithm: 'bcrypt',
-        cost: 4
-    })
-}
+// export const createPasswordHash = async (password: string) => {
+//     return await Bun.password.hash(password, {
+//         algorithm: 'bcrypt',
+//         cost: 4
+//     })
+// }
 
-export const verifyPasswordHash = async (password: string, hashedPassword: string) => {
-    return await Bun.password.verify(password, hashedPassword)
-}
+// export const verifyPasswordHash = async (password: string, hashedPassword: string) => {
+//     return await Bun.password.verify(password, hashedPassword)
+// }
 
 export const getHash = async (url: string) => {
     const salt: string = await bcrypt.genSalt(saltrounds);

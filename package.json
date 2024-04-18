@@ -11,7 +11,7 @@
   },
   "scripts": {
     "db:generate": "drizzle-kit generate:pg --schema ./schema.ts --out ./drizzle",
-    "db:migrate": "bun run migrate.ts",
+    "db:migrate": "npx drizzle-kit push:pg --connectionString=postgres://postgres@127.0.0.1:5432/postgres --schema=schema.ts --driver=pg",
     "dev": "NODE_ENV=development bun --hot --watch run index.ts"
   },
   "dependencies": {
