@@ -25,7 +25,7 @@ interface UserData {
 const zUserData: z.ZodType<UserData> = z.object({
     user_id: z.string().trim().min(4),
     email: z.string().trim().email(),
-    active_code: z.string().trim().nullable()
+    active_code: z.string().trim().nullable().optional()
 })
 
 const server = Bun.serve({
