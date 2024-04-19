@@ -4,7 +4,7 @@ import { getHash, genRandString } from "./utils/hashing.ts";
 import { signJwt, verifyJwt, decodeJwt } from "./utils/jwt.ts";
 import { z } from 'zod'
 import { fetchUuid, verifyOtp, getCount } from './utils/users.ts';
-import { getDuplicates, insertNewUrl, findMatch } from './utils/urls.ts';
+import { getUrlDuplicates, insertNewUrl, findMatch, updateUrlDates } from './utils/urls.ts';
 
 interface JsonData {
     long_url: string,
@@ -83,7 +83,7 @@ const server = Bun.serve({
             
             const payload: JsonData = (await req.json()) as JsonData
             const data = zJsonData.parse(payload)
-            const hashString: string = await getHash(data.long_url)
+            const hashString: string = await getHash()
 
             let expire_hours: number = 0
             if (data.expire_time_hours < 1) {
@@ -100,8 +100,8 @@ const server = Bun.serve({
             const dateCreated: number = Date.now()
             const dateExpires: number = dateCreated + expire_hours*60*60*1000
 
-            console.log('checking duplicates')
-            const result = await getDuplicates({ longUrl })
+            console.log('Checking duplicates...')
+            const result = await getUrlDuplicates({ longUrl })
 
             if (Object(result).length === 0) {
                 try {
@@ -109,8 +109,8 @@ const server = Bun.serve({
                         long_url: longUrl,
                         short_url: hashString,
                         created_by: userUuid,
-                        created_at: new Date(dateCreated).toString(),
-                        expires_on: new Date(dateExpires).toString()
+                        created_at: new Date(dateCreated).toISOString(),
+                        expires_on: new Date(dateExpires).toISOString()
                     })
                     console.log('Done inserting data...')
 
@@ -119,8 +119,8 @@ const server = Bun.serve({
                         status: 200,
                         long_url: longUrl,
                         short_url: shortUrl,
-                        created_at: new Date(dateCreated).toString(),
-                        expires_on: new Date(dateExpires).toString()
+                        created_at: new Date(dateCreated).toISOString(),
+                        expires_on: new Date(dateExpires).toISOString()
                     })
                 } catch (error) {
                     console.log(error)
@@ -133,11 +133,33 @@ const server = Bun.serve({
                 console.log('A duplicate is found...')
                 console.log(result[0])
 
+                const expire_date = new Date(result[0].expires_on).getTime()
+                const today = Date.now()
+                if (today > expire_hours) {
+                    console.log('Updating created_at and expires_on...')
+                    const create_date: string = new Date(today).toISOString()
+                    const expiree_date: string = new Date(expire_date).toISOString()
+                    await updateUrlDates({
+                        id: result[0].id,
+                        createdAt: create_date,
+                        expiresOn: expiree_date
+                    })
+
+                    return Response.json({
+                        success: true,
+                        status: 200,
+                        long_url: result[0].long_url,
+                        short_url: `http://${url.hostname}:${url.port}/${result[0].short_url}`,
+                        created_at: create_date,
+                        expires_on: expiree_date
+                    })
+                }
                 return Response.json({
                     success: true,
                     status: 200,
                     long_url: result[0].long_url,
-                    shortUrl: `http://${url.hostname}:${url.port}/${result[0].short_url}`,
+                    short_url: `http://${url.hostname}:${url.port}/${result[0].short_url}`,
+                    created_at: result[0].created_at,
                     expires_on: result[0].expires_on
                 })
             }
@@ -156,7 +178,7 @@ const server = Bun.serve({
             if (token === Bun.env.ADMIN_TOKEN) {
                 const userData: UserData = (await req.json()) as UserData
                 const data = zUserData.parse(userData)
-                const activation_code: string = await genRandString()
+                const activation_code: string = await genRandString() // .then((res) => {return res})
                 const hUserData: UserData = {
                     user_id: data.user_id,
                     email: data.email,
