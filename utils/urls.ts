@@ -10,13 +10,39 @@ interface UrlsData {
     expires_on: string
 }
 
-export const getDuplicates = async (data: {longUrl: string}) => {
+export const getUrlDuplicates = async (data: {longUrl: string}) => {
+    try {
+        return await db.select({
+            id: urls.id,
+            long_url: urls.long_url,
+            short_url: urls.short_url,
+            created_at: urls.created_at,
+            expires_on: urls.expires_on
+        }).from(urls).where(like(urls.long_url, data.longUrl)).limit(1)
+    } catch (error) {
+        console.log(error)
+        throw new Error('Failed to query the database.')
+    }
+}
+
+export const updateUrlDates = async (data: {id: string, createdAt: string, expiresOn: string}) => {
+    try {
+        return await db.update(urls)
+            .set({ created_at: data.createdAt, expires_on: data.expiresOn })
+            .where(like(urls.id, data.id))
+    } catch (error) {
+        console.log(error)
+        throw new Error('Failed to update the database.')
+    }
+}
+
+export const getHashDuplicates = async (data: {hashString: string}) => {
     try {
         return await db.select({
             long_url: urls.long_url,
             short_url: urls.short_url,
             expires_on: urls.expires_on
-        }).from(urls).where(like(urls.long_url, data.longUrl)).limit(1)
+        }).from(urls).where(like(urls.short_url, data.hashString)).limit(1)
     } catch (error) {
         console.log(error)
         throw new Error('Failed to query the database.')
