@@ -219,8 +219,8 @@ const server = Bun.serve({
         }
 
         //
-        console.log(req)
-        console.log(url)
+        // console.log(req)
+        // console.log(url)
         const urlHash: string = url.pathname.slice(1)
         const result = await findMatch({ path: urlHash})
         console.log(result)
