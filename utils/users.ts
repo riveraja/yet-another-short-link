@@ -2,6 +2,8 @@ import { db } from '../db/db.ts'
 import { like, and, eq, count } from 'drizzle-orm'
 import { users } from '../schema.ts'
 
+const logger = require('pino')();
+
 export const getCount = async (userId: string, email: string) => {
     return await db.select({
         value: count()
@@ -18,6 +20,7 @@ export const fetchUuid = async (userId: string, email: string) => {
         }).from(users).where(and(like(users.user_id, userId as string), like(users.email, email as string), eq(users.is_active, true))).limit(1)
         return result[0].uuid
     } catch (error) {
+        logger.info(error)
         throw new Error("Failed to fetch data.")
     }
 }
@@ -34,7 +37,7 @@ export const verifyOtp = async (userId: string, email: string, otp: string) => {
             return true
         }
     } catch (error) {
-        console.log(error)
+        logger.info(error)
         throw new Error('Failed verifying otp.')        
     }
     return false

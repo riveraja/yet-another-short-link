@@ -19,20 +19,6 @@
                 The <em>difference</em>, however, is that this is a <span>REST API only</span> service without a web interface.
                 <br />
                 <br />
-                <p class="head-style">Registration</p>
-                <p class="instructions">Register a new user, requires an API key granted by the admin.</p>
-<pre class="code-style"><code class="language-shell">$ curl -X POST -H "x-api-key:[REQUEST-API-KEY]" -d '{ "user_id": "Random User", "email": "randomuser@example.com" }' http://localhost:5173/api/register
-{
-    "success":true,
-    "activation_code":"9l63t",
-    "token":"eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo"
-}</code></pre>
-                <p class="head-style">Verification</p>
-                <p class="instructions">Verify the OTP provided to activate the new user.</p>
-<pre class="code-style"><code class="language-shell">$ curl -X GET -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" http://localhost:5173/api/verify=9l63t
-{
-    "success":true
-}</code></pre>
                 <p class="head-style">Shorten URL</p>
                 <p class="instructions">Create a shortened URL, retention time: 8hrs max, 1hr min</p>
 <pre class="code-style"><code class="language-shell">$ curl -X POST -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" \
@@ -45,6 +31,20 @@
     "created_at":"2024-04-19T12:18:15.984Z",
     "expires_on":"2024-04-19T13:18:15.984Z"
 }</code></pre>
+                <p class="head-style">Registration</p>
+                <p class="instructions">Register a new user, requires an API key granted by the admin.</p>
+<pre class="code-style"><code class="language-shell">$ curl -X POST -H "x-api-key:[REQUEST-API-KEY]" -d '{ "user_id": "Random User", "email": "randomuser@example.com" }' http://localhost:5173/api/register
+{
+"success":true,
+"activation_code":"9l63t",
+"token":"eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo"
+}</code></pre>
+                <p class="head-style">Verification</p>
+                <p class="instructions">Verify the OTP provided to activate the new user.</p>
+<pre class="code-style"><code class="language-shell">$ curl -X GET -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" http://localhost:5173/api/verify=9l63t
+{
+"success":true
+}</code></pre>
                 <p class="head-style">Refresh Token</p>
                 <p class="instructions">To refresh an expired API token.</p>
 <pre class="code-style"><code class="language-shell">$ curl -X GET -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" http://localhost:5173/api/refresh-token
@@ -56,6 +56,10 @@
             </p>
         </div>
 
+        <footer>
+            <a target="_blank" href="https://github.com/riveraja/yet-another-short-link">GitHub</a>
+        </footer>
+        
         <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
         <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/languages/shell.min.js"></script>
         <script>hljs.highlightAll();</script>
@@ -64,6 +68,7 @@
 
 <style>
     :root{
+        background-color: oldlace;
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -92,5 +97,10 @@
     .instructions{
         font-size: 12px;
         margin: 0;
+    }
+    a{
+        color: black;
+        font-family: var(--font-family);
+        text-decoration: none !important;
     }
 </style>
