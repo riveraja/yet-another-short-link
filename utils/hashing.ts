@@ -18,9 +18,9 @@ const generate_string = async (n: number) => {
 }
 
 export const getHash = async () => {
-    const hashString: string = await generate_string(7)
+    const hashString: string = await generate_string(5)
     if (Object((await getHashDuplicates({ hashString }))).length === 1) {
-        return await generate_string(6)
+        return await generate_string(4)
     } else {
         return hashString
     }
