@@ -237,10 +237,7 @@ const server = Bun.serve({
             if (hasApiKey) {
                 const { userId, email } = await decodeJwt(globalThis.token)
                 await verifyJwt(globalThis.token)
-            
-
                 const activation_code = url.pathname.split('=')[1]
-                logger.info(activation_code)
                 if (await verifyOtp(userId as string, email as string, activation_code as string)) {
                     return Response.json({ success: true })
                 }

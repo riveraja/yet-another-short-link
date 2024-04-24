@@ -21,38 +21,60 @@
                 <br />
                 <p class="head-style">Shorten URL</p>
                 <p class="instructions">Create a shortened URL, retention time: 8hrs max, 1hr min</p>
-<pre class="code-style"><code class="language-shell">$ curl -X POST -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" \
-    -d '{ "long_url": "https://medium.com/@tdodds/the-wild-story-behind-the-longest-website-url-in-the-world-8a6fd24bc15e", "expire_time_hours": 1 }' http://localhost:5173/api/shorten-url
-{
-    "success":true,
-    "status":200,
-    "long_url":"https://medium.com/@tdodds/the-wild-story-behind-the-longest-website-url-in-the-world-8a6fd24bc15e",
-    "short_url":"http://localhost:5173/fn15f",
-    "created_at":"2024-04-19T12:18:15.984Z",
-    "expires_on":"2024-04-19T13:18:15.984Z"
-}</code></pre>
+<pre class="code-style"><code class="language-javascript">const requestBody = {
+    long_url: data.LongUrl,
+    expire_time_hours: data.ExpireTime
+}
+
+const {
+    statusCode,
+    headers,
+    body
+} = await request(postUrl, {
+    method: 'POST',
+    headers: {
+        'content-type': 'application/json'
+    },
+    body: JSON.stringify(requestBody)
+})</code></pre>
                 <p class="head-style">Registration</p>
                 <p class="instructions">Register a new user, requires an API key granted by the admin.</p>
-<pre class="code-style"><code class="language-shell">$ curl -X POST -H "x-api-key:[REQUEST-API-KEY]" -d '{ "user_id": "Random User", "email": "randomuser@example.com" }' http://localhost:5173/api/register
-{
-"success":true,
-"activation_code":"9l63t",
-"token":"eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo"
-}</code></pre>
+<pre class="code-style"><code class="language-javascript">const requestBody = {
+    user_id: data.RandomUserId,
+    email: data.RandomEmail
+}
+
+const {
+    statusCode,
+    body
+} = await request(registerUrl, {
+    method: 'POST',
+    headers: {
+        'x-api-key': data.AdminToken,
+        'content-type': 'application/json'
+    },
+    body: JSON.stringify(requestBody)
+})</code></pre>
                 <p class="head-style">Verification</p>
                 <p class="instructions">Verify the OTP provided to activate the new user.</p>
-<pre class="code-style"><code class="language-shell">$ curl -X GET -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" http://localhost:5173/api/verify=9l63t
-{
-"success":true
-}</code></pre>
+<pre class="code-style"><code class="language-javascript">const { statusCode } = await request(verifyUrl, {
+    method: 'GET',
+    headers: {
+        'x-api-key': (jsonBody.token?.trim()),
+        'content-type': 'application/json'
+    },
+    body: null
+})</code></pre>
                 <p class="head-style">Refresh Token</p>
                 <p class="instructions">To refresh an expired API token.</p>
-<pre class="code-style"><code class="language-shell">$ curl -X GET -H "x-api-key:eyJhbGciOiJIUzI1NiJ9.REDACTED.mdpxgJbcuCzE3v355xm6Wujh-dqbZaKMvN2xat4UFCo" http://localhost:5173/api/refresh-token
-{
-    "success":true,
-    "status":200,
-    "token":"eyJhbGciOiJIUzI1NiJ9.REDACTED.8r3CKfFtDVitzoYnjLPSM9HImtuFXHUowwTOnAXj1As"
-}</code></pre>
+<pre class="code-style"><code class="language-javascript">const result = await request(verifyUrl, {
+    method: 'GET',
+    headers: {
+        'x-api-key': (code.jsonBody.token?.trim()),
+        'content-type': 'application/json'
+    },
+    body: null
+})</code></pre>
             </p>
         </div>
 
@@ -62,6 +84,7 @@
         
         <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
         <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/languages/shell.min.js"></script>
+        <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/languages/javascript.min.js"></script>
         <script>hljs.highlightAll();</script>
     </body>
 </html>
@@ -84,7 +107,7 @@
         font-weight: bold;
     }
     .code-style{
-        width: 100%;
+        width: 50%;
         tab-size: 2;
         text-align: left;
         font-size: 12.5px;
