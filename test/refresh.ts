@@ -7,19 +7,26 @@ interface Register {
     token: string
 }
 
-export const refresh_token = async (code: { jsonBody: Register }) => {
-    const otpToken = (code.jsonBody.activation_code)?.trim()
-    const refreshEndpoint = '/api/refresh-token'
-    const verifyUrl = `http://${data.Hostname}:${data.Port}${refreshEndpoint}`
+interface Body {
+    success: boolean,
+    status: number,
+    token: string
+}
 
-    const result = await request(verifyUrl, {
+export const refresh_token = async (code: { jsonBody: Register }) => {
+    const refreshEndpoint = '/api/refresh-token'
+    const refreshUrl = `http://${data.Hostname}:${data.Port}${refreshEndpoint}`
+
+    const result = await request(refreshUrl, {
         method: 'GET',
         headers: {
-            'x-api-key': (code.jsonBody.token?.trim()),
-            'content-type': 'application/json'
-        },
-        body: null
+            'x-api-key': (code.jsonBody.token?.trim())
+        }
     })
 
-    return result
+    if (result.statusCode === 200) {
+        console.log('Token refreshed successfully!')
+        const body: Body = await result.body.json() as Body
+        console.log('Refreshed token:', body.token)
+    }
 }

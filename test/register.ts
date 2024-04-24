@@ -16,6 +16,7 @@ interface UserData {
 
 export const registerUser = async (data: UserData) => {
     const {
+        statusCode,
         body
     } = await request(registerUrl, {
         method: 'POST',
@@ -26,5 +27,6 @@ export const registerUser = async (data: UserData) => {
         body: JSON.stringify(data.body)
     })
 
+    if (statusCode === 200) console.log('User registration successful!')
     return body
 }

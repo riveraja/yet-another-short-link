@@ -21,6 +21,7 @@ export const verify_otp = async (code: { jsonBody: Register }) => {
         body: null
     })
 
-    return statusCode
+    if (statusCode === 200) console.log('Verification successful!')
+
 }
 

@@ -43,6 +43,12 @@ const server = Bun.serve({
     async fetch(req) {
         const url = new URL(req.url);
         const verifyEndpoint = new RegExp('/api/verify', 'i')
+
+        /*
+        console.log('req', req)
+        console.log('url', url)
+        */
+
         if (req.headers.has('x-api-key')) var hasApiKey = true; else hasApiKey = false
         
         if (hasApiKey) {
@@ -246,10 +252,6 @@ const server = Bun.serve({
             return Response.json({ success: false })
         }
 
-        /*
-        console.log(req)
-        console.log(url)
-        */
         const urlHash: string = url.pathname.slice(1)
         const result = await findMatch({ path: urlHash})
         logger.info(result)
