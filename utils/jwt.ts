@@ -1,5 +1,6 @@
 import * as jose from 'jose'
-import { db } from '../db/db.ts'
+const logger = require('pino')();
+// import { db } from '../db/db.ts'
 
 const key: Uint8Array = new TextEncoder().encode(import.meta.env.JWT_SECRET)
 const alg: string = import.meta.env.JWT_ALG as string
@@ -24,6 +25,7 @@ export const verifyJwt = async (clientJwt: string) => {
             audience: aud
         })    
     } catch (error) {
+        logger.error(error)
         throw new Error('Token verification failed.')
     }
 }
@@ -32,6 +34,7 @@ export const decodeJwt = async (clientJwt: string) => {
     try {
         return await jose.decodeJwt(clientJwt)
     } catch (error) {
+        logger.error(error)
         throw new Error("Failed decoding the token.")
     }
 }
